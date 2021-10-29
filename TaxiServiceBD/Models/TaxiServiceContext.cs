@@ -24,7 +24,7 @@ namespace TaxiServiceBD.Models
         public virtual DbSet<Driver> Drivers { get; set; }
   
         public virtual DbSet<Order> Orders { get; set; }
-        public virtual DbSet<CategoriesTaxiClass> CategoriesTaxiClasses { get; set; }
+
         public virtual DbSet<TaxiClass> TaxiClasses { get; set; }
         public virtual DbSet<User> Users { get; set; }
 
@@ -53,21 +53,7 @@ namespace TaxiServiceBD.Models
                     .HasConstraintName("FK_CategoriesClassDetails_TaxiClass");
             });
 
-            modelBuilder.Entity<CategoriesTaxiClass>(entity =>
-            {
-                entity.HasNoKey();
-
-                entity.ToView("CategoriesTaxiClass");
-
-                entity.Property(e => e.Category)
-                    .HasMaxLength(100)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.Taxi)
-                    .HasMaxLength(100)
-                    .IsUnicode(false);
-            });
-
+        
             modelBuilder.Entity<Category>(entity =>
             {
                 entity.Property(e => e.FullName)

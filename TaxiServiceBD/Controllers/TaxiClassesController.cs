@@ -61,7 +61,8 @@ namespace TaxiServiceBD.Controllers
                 try {
 
                     _context.Add(taxiClass);
-                    await transaction.CommitAsync();
+                    await _context.SaveChangesAsync();
+                    transaction.Commit();
                     Console.WriteLine("Transaction succeeded");
                 }
                 catch (Exception ex)

@@ -1,5 +1,5 @@
-﻿@model IEnumerable<TaxiServiceBD.Models.Order>
-
+﻿@*@model IEnumerable<TaxiServiceBD.Models.Order>*@
+@model Pagination<TaxiServiceBD.Models.Order>
 @{
     ViewData["Title"] = "Index";
 }
@@ -23,41 +23,55 @@
     <thead>
         <tr>
             <th>
-                <a asp-action="SortKey" asp-route-sortOrder="@ViewData["DateSortParm"]">@Html.DisplayNameFor(model=> model.DateOfCreation)</a>
+                <a asp-action="SortKey" asp-route-sortOrder="@ViewData["DateSortParm"]">DateOfCreation</a>
             </th>
             <th>
-              @Html.DisplayNameFor(model => model.CategoryClass)
+                CategoryClass
             </th>
             <th>
-                <a asp-action="SortKey" asp-route-sortOrder="@ViewData["DriverSortParm"]"> @Html.DisplayNameFor(model=> model.Driver)</a>
+                <a asp-action="SortKey" asp-route-sortOrder="@ViewData["DriverSortParm"]"> Driver</a>
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.User)
+                User
             </th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.DateOfCreation)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CategoryClass.CategoryName)  @Html.DisplayFor(modelItem => item.CategoryClass.TaxiName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Driver.FullName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.User.FullName)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.DateOfCreation)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.CategoryClass.CategoryName)  @Html.DisplayFor(modelItem => item.CategoryClass.TaxiName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Driver.FullName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.User.FullName)
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>
+@{ var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+                var nextDisabled = !Model.HasNextPage ? "disabled" : ""; }
+
+<a asp-action="Index"
+   asp-route-pageNumber="@(Model.PageIndex - 1)"
+   class="btn btn-default @prevDisabled">
+    Previous
+</a>
+<a asp-action="Index"
+   asp-route-pageNumber="@(Model.PageIndex + 1)"
+   class="btn btn-default @nextDisabled">
+    Next
+</a>

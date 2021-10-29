@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+
 using TaxiServiceBD.Models;
 
 namespace TaxiServiceBD.Controllers
@@ -19,7 +20,7 @@ namespace TaxiServiceBD.Controllers
         }
 
         // GET: Orders
-        public async Task<IActionResult> Index(string SearchString)
+        public async Task<IActionResult> Index(string SearchString,int? pageNumber)
         {
            
             var taxiServiceContext = await _context.Orders.Include(o => o.CategoryClass).Include(o => o.Driver).Include(o => o.User).ToListAsync();
@@ -51,9 +52,11 @@ namespace TaxiServiceBD.Controllers
             {
                 taxiServiceContext =  taxiServiceContext.Where(s => s.DateOfCreation.ToString().StartsWith(SearchString)).ToList();
             }
-            return View(taxiServiceContext);
+            int pageSize = 3;
+            return View( Pagination<Order>.Create(taxiServiceContext, pageNumber ?? 1, pageSize));
+            //  return View(taxiServiceContext);
         }
-        public async Task<IActionResult> SortKey(string sortOrder)
+        public async Task<IActionResult> SortKey(string sortOrder, int? pageNumber)
         {
 
             ViewData["DateSortParm"] = String.IsNullOrEmpty(sortOrder) ? "date_desc" : "";
@@ -99,8 +102,10 @@ namespace TaxiServiceBD.Controllers
                     taxiServiceContext = taxiServiceContext.OrderBy(s => s.DateOfCreation).ToList();
                     break;
             }
-            return View("Index", taxiServiceContext);
-
+            int pageSize = 3;
+            return View("Index", Pagination<Order>.Create(taxiServiceContext, pageNumber ?? 1, pageSize));
+       
+        
 
         }
         //TASK8
@@ -165,7 +170,8 @@ namespace TaxiServiceBD.Controllers
             {
                 try {
                     _context.Add(order);
-                    await transaction.CommitAsync();
+                    await _context.SaveChangesAsync();
+                    transaction.Commit();
                     Console.WriteLine("Transaction succeeded");
                 }
                 catch (Exception ex)
@@ -196,7 +202,7 @@ namespace TaxiServiceBD.Controllers
           .Select(s => new
           {
               Id = s.Id,
-              Description = string.Format("{0}-- £{1}", s.CategoryName, s.TaxiName)
+              Description = string.Format("{0} - {1}", s.CategoryName, s.TaxiName)
           })
        .ToList();
             ViewData["CategoryClassId"] = new SelectList(stands, "Id", "Description", order.CategoryClassId);
@@ -260,7 +266,8 @@ namespace TaxiServiceBD.Controllers
                 try
                 {
                     _context.Update(order);
-                    await transaction.CommitAsync();
+                    await _context.SaveChangesAsync();
+                    transaction.Commit();
                     Console.WriteLine("Transaction succeeded");
                 }
                 catch (Exception ex)

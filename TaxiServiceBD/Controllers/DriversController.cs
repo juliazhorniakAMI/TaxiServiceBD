@@ -60,7 +60,8 @@ namespace TaxiServiceBD.Controllers
             {
                 try {
                     _context.Add(driver);
-                    await transaction.CommitAsync();
+                    await _context.SaveChangesAsync();
+                    transaction.Commit();
                     Console.WriteLine("Transaction succeeded");
                 }
                 catch (Exception ex)
@@ -113,7 +114,8 @@ namespace TaxiServiceBD.Controllers
                 try
                 {
                     _context.Update(driver);
-                    await transaction.CommitAsync();
+                    await _context.SaveChangesAsync();
+                    transaction.Commit();
                     Console.WriteLine("Transaction succeeded");
                 }
                 catch (Exception ex)
@@ -161,7 +163,8 @@ namespace TaxiServiceBD.Controllers
 
                 var driver = await _context.Drivers.FindAsync(id);
                 _context.Drivers.Remove(driver);
-                await transaction.CommitAsync();
+                await _context.SaveChangesAsync();
+                transaction.Commit();
                 Console.WriteLine("Transaction succeeded");
             }
             catch (Exception ex)

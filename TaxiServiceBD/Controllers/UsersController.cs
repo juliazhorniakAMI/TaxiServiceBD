@@ -73,8 +73,9 @@ namespace TaxiServiceBD.Controllers
 
                     _context.Database.ExecuteSqlRaw(sql, parms.ToArray());
 
-               
-                    await  transaction.CommitAsync();
+
+                    await _context.SaveChangesAsync();
+                    transaction.Commit();
                     Console.WriteLine("Transaction completed");
                  
                   
@@ -138,8 +139,9 @@ namespace TaxiServiceBD.Controllers
                  };
 
                     _context.Database.ExecuteSqlRaw(sql, parms.ToArray());
-             
-                   await  transaction.CommitAsync();
+
+                    await _context.SaveChangesAsync();
+                    transaction.Commit();
                     Console.WriteLine("Transaction completed");
 
                 }
@@ -192,8 +194,8 @@ namespace TaxiServiceBD.Controllers
                 var entityId = new SqlParameter("@UserId", id);
 
                 _context.Database.ExecuteSqlRaw(sql, entityId);
-
-                await transaction.CommitAsync();
+                await _context.SaveChangesAsync();
+                transaction.Commit();
             }
             catch (Exception ex)
             {

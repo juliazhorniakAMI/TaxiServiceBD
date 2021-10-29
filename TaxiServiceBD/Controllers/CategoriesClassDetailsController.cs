@@ -30,7 +30,7 @@ namespace TaxiServiceBD.Controllers
                 x.Category = cat;
                 x.TaxiClass = t;
             }
-
+     
             return View(list);
         }
 
@@ -62,7 +62,8 @@ namespace TaxiServiceBD.Controllers
                 {
 
                     _context.Add(categoriesClassDetail);
-                    await transaction.CommitAsync();
+                    await _context.SaveChangesAsync();
+                    transaction.Commit();
                     Console.WriteLine("Transaction completed");
                   
                 }
@@ -129,7 +130,8 @@ namespace TaxiServiceBD.Controllers
 
                  
                     _context.Update(categoriesClassDetail);
-                    await transaction.CommitAsync();
+                    await _context.SaveChangesAsync();
+                    transaction.Commit();
                     Console.WriteLine("Transaction succeeded");
 
                 }
@@ -192,7 +194,8 @@ namespace TaxiServiceBD.Controllers
                 var categoriesClassDetail = await _context.CategoriesClassDetails.FindAsync(id);
           
                 _context.CategoriesClassDetails.Remove(categoriesClassDetail);
-                await transaction.CommitAsync();
+                await _context.SaveChangesAsync();
+                transaction.Commit();
                 transaction.Commit();
             }
             catch (Exception ex)
