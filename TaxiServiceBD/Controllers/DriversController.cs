@@ -55,10 +55,25 @@ namespace TaxiServiceBD.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,FullName,PhoneNumber,Rate,IsActive")] Driver driver)
         {
+            using var transaction = _context.Database.BeginTransaction();
             if (ModelState.IsValid)
             {
-                _context.Add(driver);
-                await _context.SaveChangesAsync();
+                try {
+                    _context.Add(driver);
+                    await transaction.CommitAsync();
+                    Console.WriteLine("Transaction succeeded");
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    Console.WriteLine(ex.Message);
+                    throw;
+                }
+
+                finally
+                {
+                    transaction.Dispose();
+                }
                 return RedirectToAction(nameof(Index));
             }
             return View(driver);
@@ -87,6 +102,7 @@ namespace TaxiServiceBD.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,FullName,PhoneNumber,Rate,IsActive")] Driver driver)
         {
+            using var transaction = _context.Database.BeginTransaction();
             if (id != driver.Id)
             {
                 return NotFound();
@@ -97,18 +113,19 @@ namespace TaxiServiceBD.Controllers
                 try
                 {
                     _context.Update(driver);
-                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    Console.WriteLine("Transaction succeeded");
                 }
-                catch (DbUpdateConcurrencyException)
+                catch (Exception ex)
                 {
-                    if (!DriverExists(driver.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    transaction.Rollback();
+                    Console.WriteLine(ex.Message);
+                    throw;
+                }
+
+                finally
+                {
+                    transaction.Dispose();
                 }
                 return RedirectToAction(nameof(Index));
             }
@@ -138,9 +155,27 @@ namespace TaxiServiceBD.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var driver = await _context.Drivers.FindAsync(id);
-            _context.Drivers.Remove(driver);
-            await _context.SaveChangesAsync();
+            using var transaction = _context.Database.BeginTransaction();
+            try {
+
+
+                var driver = await _context.Drivers.FindAsync(id);
+                _context.Drivers.Remove(driver);
+                await transaction.CommitAsync();
+                Console.WriteLine("Transaction succeeded");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                Console.WriteLine(ex.Message);
+                throw;
+            }
+
+            finally
+            {
+                transaction.Dispose();
+            }
+
             return RedirectToAction(nameof(Index));
         }
 

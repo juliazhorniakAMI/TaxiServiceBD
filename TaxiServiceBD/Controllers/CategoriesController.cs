@@ -55,10 +55,27 @@ namespace TaxiServiceBD.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,FullName")] Category category)
         {
+
+            using var transaction = _context.Database.BeginTransaction();
+
             if (ModelState.IsValid)
             {
-                _context.Add(category);
-                await _context.SaveChangesAsync();
+                try {
+                    _context.Add(category);
+                    await transaction.CommitAsync();
+                    Console.WriteLine("Transaction succeeded");
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    Console.WriteLine(ex.Message);
+                    throw;
+                }
+
+                finally
+                {
+                    transaction.Dispose();
+                }
                 return RedirectToAction(nameof(Index));
             }
             return View(category);
@@ -67,6 +84,8 @@ namespace TaxiServiceBD.Controllers
         // GET: Categories/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+
+       
             if (id == null)
             {
                 return NotFound();
@@ -87,6 +106,10 @@ namespace TaxiServiceBD.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,FullName")] Category category)
         {
+            using var transaction = _context.Database.BeginTransaction();
+
+
+
             if (id != category.Id)
             {
                 return NotFound();
@@ -97,19 +120,22 @@ namespace TaxiServiceBD.Controllers
                 try
                 {
                     _context.Update(category);
-                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    Console.WriteLine("Transaction succeeded");
                 }
-                catch (DbUpdateConcurrencyException)
+                catch (Exception ex)
                 {
-                    if (!CategoryExists(category.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    transaction.Rollback();
+                    Console.WriteLine(ex.Message);
+                    throw;
                 }
+
+                finally
+                {
+                    transaction.Dispose();
+                }
+              
+              
                 return RedirectToAction(nameof(Index));
             }
             return View(category);
@@ -138,9 +164,28 @@ namespace TaxiServiceBD.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var category = await _context.Categories.FindAsync(id);
-            _context.Categories.Remove(category);
-            await _context.SaveChangesAsync();
+
+            using var transaction = _context.Database.BeginTransaction();
+            try
+            {
+                var category = await _context.Categories.FindAsync(id);
+                _context.Categories.Remove(category);
+                await transaction.CommitAsync();
+                Console.WriteLine("Transaction succeeded");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                Console.WriteLine(ex.Message);
+                throw;
+            }
+
+            finally
+            {
+                transaction.Dispose();
+            }
+
+
             return RedirectToAction(nameof(Index));
         }
 

@@ -53,33 +53,52 @@ namespace TaxiServiceBD.Controllers
             return View();
         }
 
-        // POST: Users/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+     
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,FullName,PhoneNumber")] User user)
         {
+            using var transaction = _context.Database.BeginTransaction();
             if (ModelState.IsValid)
             {
-                string sql = "EXEC spCreateUser @FullName, @PhoneNumber";
+                try {
 
-                List<SqlParameter> parms = new List<SqlParameter> { 
-       
+                    string sql = "EXEC spCreateUser @FullName, @PhoneNumber";
+
+                    List<SqlParameter> parms = new List<SqlParameter> {
+
                     new SqlParameter { ParameterName = "@FullName", Value = user.FullName },
                     new SqlParameter { ParameterName = "@PhoneNumber", Value = user.PhoneNumber }
                  };
 
-                _context.Database.ExecuteSqlRaw(sql, parms.ToArray());
-          
-                //_context.Add(user);
-                await _context.SaveChangesAsync();
+                    _context.Database.ExecuteSqlRaw(sql, parms.ToArray());
+
+               
+                    await  transaction.CommitAsync();
+                    Console.WriteLine("Transaction completed");
+                 
+                  
+                }
+
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    Console.WriteLine("Transaction failed");
+                    Console.WriteLine(ex.Message);
+                    throw;
+                }
+
+                finally
+                {
+                    transaction.Dispose();
+                }
+
                 return RedirectToAction(nameof(Index));
             }
             return View(user);
         }
 
-        // GET: Users/Edit/5
+
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -95,13 +114,12 @@ namespace TaxiServiceBD.Controllers
             return View(user.FirstOrDefault());
         }
 
-        // POST: Users/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+       
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,FullName,PhoneNumber")] User user)
         {
+            using var transaction = _context.Database.BeginTransaction();
             if (id != user.Id)
             {
                 return NotFound();
@@ -114,34 +132,37 @@ namespace TaxiServiceBD.Controllers
                     string sql = "EXEC _spUpdateUser @UserId, @FullName,@PhoneNumber";
 
                     List<SqlParameter> parms = new List<SqlParameter> {
-                    new SqlParameter { ParameterName = "@UserId", Value = user.Id },
+                    new SqlParameter { ParameterName = "@UserId", Value = user.Id /* Value = null*/},
                     new SqlParameter { ParameterName = "@FullName", Value = user.FullName },
                     new SqlParameter { ParameterName = "@PhoneNumber", Value = user.PhoneNumber }
                  };
 
                     _context.Database.ExecuteSqlRaw(sql, parms.ToArray());
+             
+                   await  transaction.CommitAsync();
+                    Console.WriteLine("Transaction completed");
 
-                    //_context.Add(user);
-                    await _context.SaveChangesAsync();
-                  
                 }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!UserExists(user.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+
+                catch (Exception ex)
+              {
+                transaction.Rollback();
+                Console.WriteLine("Transaction failed");
+                    Console.WriteLine(ex.Message);
+                    throw;
+              }
+
+            finally
+            {
+                transaction.Dispose();
+            }
+               
                 return RedirectToAction(nameof(Index));
             }
             return View(user);
         }
 
-        // GET: Users/Delete/5
+
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -159,18 +180,37 @@ namespace TaxiServiceBD.Controllers
             return View(user);
         }
 
-        // POST: Users/Delete/5
+
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            string sql = "EXEC _spDeleteUser @UserId";
-            var entityId = new SqlParameter("@UserId", id);
+            using var transaction = _context.Database.BeginTransaction();
+            try
+            {
+                string sql = "EXEC _spDeleteUser @UserId";
+                var entityId = new SqlParameter("@UserId", id);
 
-            _context.Database.ExecuteSqlRaw(sql, entityId);
+                _context.Database.ExecuteSqlRaw(sql, entityId);
 
-            await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                Console.WriteLine("Transaction failed");
+                Console.WriteLine(ex.Message);
+                throw;
+            }
+
+            finally
+            {
+                transaction.Dispose();
+            }
+
             return RedirectToAction(nameof(Index));
+        
+      
         }
 
         private bool UserExists(int id)

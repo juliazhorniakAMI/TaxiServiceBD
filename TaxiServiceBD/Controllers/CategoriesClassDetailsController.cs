@@ -18,25 +18,23 @@ namespace TaxiServiceBD.Controllers
             _context = context;
         }
 
-        // GET: CategoriesClassDetails
+   
         public async Task<IActionResult> Index()
         {
             var list = await _context.CategoriesClassDetails.FromSqlRaw<CategoriesClassDetail>("spGetCategoriesTaxi").ToListAsync();
             foreach (var x in list) {
-                var categ =  _context.Categories.FromSqlRaw<Category>("_spGetCategoryById {0}", x.CategoryId).ToList();
+                var categ = _context.Categories.FromSqlRaw<Category>("_spGetCategoryById {0}", x.CategoryId).ToList();
                 Category cat = categ.FirstOrDefault();
                 var taxi = _context.TaxiClasses.FromSqlRaw<TaxiClass>("_spGetTaxiById {0}", x.TaxiClassId).ToList();
                 TaxiClass t = taxi.FirstOrDefault();
                 x.Category = cat;
                 x.TaxiClass = t;
             }
-         
+
             return View(list);
         }
 
-        // GET: CategoriesClassDetails/Details/5
-     
-        // GET: CategoriesClassDetails/Create
+  
         public IActionResult Create()
         {
             ViewData["CategoryFullName"] = new SelectList(_context.Categories, "FullName", "FullName");
@@ -44,33 +42,48 @@ namespace TaxiServiceBD.Controllers
             return View();
         }
 
-        // POST: CategoriesClassDetails/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+       
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,CategoryId,TaxiClassId,IsActive")] CategoriesClassDetail categoriesClassDetail)
+        public async Task<IActionResult> Create([Bind("Id,CategoryName,TaxiName")] CategoriesClassDetail categoriesClassDetail)
         {
-            var categ = _context.Categories.FromSqlRaw<Category>("_spGetCategoryByName {0}", categoriesClassDetail.Category.FullName).ToList();
-            Category cat = categ.FirstOrDefault();
-            var taxi = _context.TaxiClasses.FromSqlRaw<TaxiClass>("spGetTaxiByName {0}", categoriesClassDetail.TaxiClass.FullName).ToList();
-            TaxiClass t = taxi.FirstOrDefault();
-            categoriesClassDetail.Category = cat;
-            categoriesClassDetail.TaxiClass = t;
+            using var transaction = _context.Database.BeginTransaction();
+          
+                var categ = _context.Categories.FromSqlRaw<Category>("_spGetCategoryByName {0}", categoriesClassDetail.CategoryName).ToList();
+                Category cat = categ.FirstOrDefault();
+                var taxi = _context.TaxiClasses.FromSqlRaw<TaxiClass>("spGetTaxiByName {0}", categoriesClassDetail.TaxiName).ToList();
+                TaxiClass t = taxi.FirstOrDefault();
+                categoriesClassDetail.Category = cat;
+                categoriesClassDetail.TaxiClass = t;
 
-            if (ModelState.IsValid)
-            {
-                _context.Add(categoriesClassDetail);
-                await _context.SaveChangesAsync();
+                if (ModelState.IsValid)
+                {
+                try
+                {
+
+                    _context.Add(categoriesClassDetail);
+                    await transaction.CommitAsync();
+                    Console.WriteLine("Transaction completed");
+                  
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    Console.WriteLine(ex.Message);
+                    throw;
+                }
+
+                finally
+                {
+                    transaction.Dispose();
+                }
                 return RedirectToAction(nameof(Index));
             }
-
-            //ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Id", categoriesClassDetail.CategoryId);
-            //ViewData["TaxiClassId"] = new SelectList(_context.TaxiClasses, "Id", "Id", categoriesClassDetail.TaxiClassId);
+            
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: CategoriesClassDetails/Edit/5
+
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -92,50 +105,63 @@ namespace TaxiServiceBD.Controllers
             return View(categoriesClassDetail);
         }
 
-        // POST: CategoriesClassDetails/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+      
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,CategoryId,TaxiClassId,IsActive")] CategoriesClassDetail categoriesClassDetail)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,CategoryName,TaxiName,IsActive")] CategoriesClassDetail categoriesClassDetail)
         {
-            var categ = _context.Categories.FromSqlRaw<Category>("_spGetCategoryByName {0}", categoriesClassDetail.Category.FullName).ToList();
-            Category cat = categ.FirstOrDefault();
-            var taxi = _context.TaxiClasses.FromSqlRaw<TaxiClass>("spGetTaxiByName {0}", categoriesClassDetail.TaxiClass.FullName).ToList();
-            TaxiClass t = taxi.FirstOrDefault();
-            categoriesClassDetail.Category = cat;
+          
+
+            using var transaction = _context.Database.BeginTransaction();
+
+            var categ = await _context.Categories.FromSqlRaw<Category>("_spGetCategoryByName {0}", categoriesClassDetail.CategoryName).ToListAsync();
+                Category cat = categ.FirstOrDefault();
+                var taxi =await _context.TaxiClasses.FromSqlRaw<TaxiClass>("spGetTaxiByName {0}", categoriesClassDetail.TaxiName).ToListAsync();
+                TaxiClass t = taxi.FirstOrDefault();
+              categoriesClassDetail.Category = cat;
+         
             categoriesClassDetail.TaxiClass = t;
-            if (id != categoriesClassDetail.Id)
-            {
-                return NotFound();
-            }
 
             if (ModelState.IsValid)
-            {
+                {
                 try
                 {
+
+                 
                     _context.Update(categoriesClassDetail);
-                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    Console.WriteLine("Transaction succeeded");
+
                 }
                 catch (DbUpdateConcurrencyException)
                 {
+                   
+                    transaction.Rollback();
+                    Console.WriteLine("Transaction failed");
+
                     if (!CategoriesClassDetailExists(categoriesClassDetail.Id))
                     {
                         return NotFound();
                     }
+
                     else
                     {
+
                         throw;
                     }
                 }
+                finally
+                {
+                    transaction.Dispose();
+                }
                 return RedirectToAction(nameof(Index));
-
             }
-         
+
+
             return View(categoriesClassDetail);
         }
 
-        // GET: CategoriesClassDetails/Delete/5
+
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -155,14 +181,31 @@ namespace TaxiServiceBD.Controllers
             return View(categoriesClassDetail);
         }
 
-        // POST: CategoriesClassDetails/Delete/5
+
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var categoriesClassDetail = await _context.CategoriesClassDetails.FindAsync(id);
-            _context.CategoriesClassDetails.Remove(categoriesClassDetail);
-            await _context.SaveChangesAsync();
+            using var transaction = _context.Database.BeginTransaction();
+            try
+            {
+                var categoriesClassDetail = await _context.CategoriesClassDetails.FindAsync(id);
+          
+                _context.CategoriesClassDetails.Remove(categoriesClassDetail);
+                await transaction.CommitAsync();
+                transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                Console.WriteLine(ex.Message);
+                throw;
+            }
+
+            finally
+            {
+                transaction.Dispose();
+            }
             return RedirectToAction(nameof(Index));
         }
 
